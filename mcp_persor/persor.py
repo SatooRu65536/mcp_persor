@@ -1,34 +1,22 @@
 import pandas as pd
 import numpy as np
 import re
-import json
 
 
 class BVHparser:
     def __init__(self, filename):
         self.bvh = self.__readFile(filename)
-        self.frame_time = self.__getFrameTime()
-        self.hierarchy = None
-        self.motion = None
-        self.skeleton = None
-
-        self.__initBVHData()
-
-    def __initBVHData(self):
-        '''
-        BVHファイルからデータを読み込む
-
-        Parameters
-        ----------
-        filename : str
-            BVHファイルのパス
-        '''
 
         lines = self.bvh.split('\n')
-        hierarchy_tokens = self.__getHierarchyTokens(lines)
-        skeleton = self.__setJointData(hierarchy_tokens)
 
-        self.skeleton = skeleton
+        hierarchy_tokens = self.__getHierarchyTokens(lines)
+        self.skeleton = self.__getJointData(hierarchy_tokens)
+
+        (frame_time, frames, motion) = self.__getMotionData(lines)
+
+        self.frame_time = frame_time
+        self.frames = frames
+        self.motion = motion
 
     def __readFile(self, filename):
         '''
@@ -42,19 +30,6 @@ class BVHparser:
 
         with open(filename, 'r') as f:
             return f.read()
-
-    def __getFrameTime(self):
-        '''
-        BVHファイルからフレーム時間を取得する
-
-        Returns
-        -------
-        float
-        '''
-
-        for token in self.bvh.split('Frame Time:')[1].split():
-            if token != '':
-                return float(token)
 
     def __getMotion(self):
         '''
@@ -105,14 +80,14 @@ class BVHparser:
             階層構造のトークン
         '''
 
-        hierarchy = []
+        tokens = []
         index = 0
         nesting_level = 0
         is_closeing = False
 
         for i in range(len(lines)):
             line = lines.pop(0)
-            hierarchy += line.split()
+            tokens += line.split()
             nesting_level += line.count('{') - line.count('}')
             index += 1
             if line.count('}') > 0:
@@ -120,9 +95,23 @@ class BVHparser:
             if nesting_level == 0 and is_closeing:
                 break
 
-        return hierarchy
+        return tokens
 
-    def __setJointData(self, tokens):
+    def __getJointData(self, tokens):
+        '''
+        トークン配列からJointデータを取得する
+
+        Parameters
+        ----------
+        tokens : list
+            Hierarchy部のトークン
+
+        Returns
+        -------
+        dict
+            Jointデータ
+        '''
+
         skeleton = {}
         joint_name = None
         joint_list = []
@@ -153,13 +142,43 @@ class BVHparser:
                     offset = self.__try_to_float(tokens[index])
                     skeleton[joint_name]['offset'].append(offset)
                     index += 1
+                i = index - 1
             elif tokens[i] == 'CHANNELS':
                 index = i + 2
                 while tokens[index] not in ['OFFSET', 'CHANNELS', 'JOINT', '{']:
                     skeleton[joint_name]['channels'].append(tokens[index])
                     index += 1
+                i = index - 1
 
         return skeleton
+
+    def __getMotionData(self, lines):
+        '''
+        トークン配列からモーションデータを取得する
+
+        Parameters
+        ----------
+        tokens : list
+            Motion部のトークン
+
+        Returns
+        -------
+        list
+            モーションデータ
+        '''
+
+        motion = []
+        frames = None
+        frame_time = None
+        for i in range(len(lines)):
+            if 'Frames:' in lines[i]:
+                frame_time = self.__try_to_float(lines[i].split()[1])
+            elif 'Frame Time:' in lines[i]:
+                frames = self.__try_to_float(lines[i].split()[2])
+            else:
+                motion += [self.__try_to_float(v) for v in lines[i].split()]
+
+        return (frame_time, frames, motion)
 
     def getSkeletonPathToRoot(self, joint):
         '''
