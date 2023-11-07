@@ -1,7 +1,7 @@
-from .persor import BVHparser
-from .plot import plot
+from mcp_persor.persor import BVHparser
+from mcp_persor.plot import plot
 
-bvhp = BVHparser('sample/jump.bvh')
+bvhp = BVHparser('bvh/jump.bvh')
 motion_df = bvhp.getMotionDataframe()
 
 joint_name = 'r_toes'

@@ -1,65 +1,198 @@
 import pandas as pd
+import numpy as np
+import re
+import json
 
 
 class BVHparser:
     def __init__(self, filename):
         self.bvh = self.__readFile(filename)
         self.frame_time = self.__getFrameTime()
-        self.skeleton = self.__getSkeleton()
+        self.hierarchy = None
+        self.motion = None
+        self.skeleton = None
+
+        self.__initBVHData()
+
+    def __initBVHData(self):
+        '''
+        BVHファイルからデータを読み込む
+
+        Parameters
+        ----------
+        filename : str
+            BVHファイルのパス
+        '''
+
+        lines = self.bvh.split('\n')
+        hierarchy_tokens = self.__getHierarchyTokens(lines)
+        skeleton = self.__setJointData(hierarchy_tokens)
+
+        self.skeleton = skeleton
 
     def __readFile(self, filename):
+        '''
+        BVHファイルを読み込む
+
+        Parameters
+        ----------
+        filename : str
+            BVHファイルのパス
+        '''
+
         with open(filename, 'r') as f:
             return f.read()
 
     def __getFrameTime(self):
+        '''
+        BVHファイルからフレーム時間を取得する
+
+        Returns
+        -------
+        float
+        '''
+
         for token in self.bvh.split('Frame Time:')[1].split():
             if token != '':
                 return float(token)
 
     def __getMotion(self):
+        '''
+        BVHファイルからモーションデータを取得する
+
+        Returns
+        -------
+        list
+            モーションデータ
+        '''
+
         motion = self.bvh.split('Frame Time:')[1]
         motion = motion.split("\n")
         return motion[1:]
 
-    def __getSkeleton(self):
-        return {
-            'root': {'id': 0, 'joint': None},
-            'torso_1': {'id': 1, 'joint': 'root'},
-            'torso_2': {'id': 2, 'joint': 'torso_1'},
-            'torso_3': {'id': 3, 'joint': 'torso_2'},
-            'torso_4': {'id': 4, 'joint': 'torso_3'},
-            'torso_5': {'id': 5, 'joint': 'torso_4'},
-            'torso_6': {'id': 6, 'joint': 'torso_5'},
-            'torso_7': {'id': 7, 'joint': 'torso_6'},
-            'neck_1': {'id': 8, 'joint': 'torso_7'},
-            'neck_2': {'id': 9, 'joint': 'neck_1'},
-            'head': {'id': 10, 'joint': 'neck_2'},
-            'l_shoulder': {'id': 11, 'joint': 'torso_7'},
-            'l_up_arm': {'id': 12, 'joint': 'l_shoulder'},
-            'l_low_arm': {'id': 13, 'joint': 'l_up_arm'},
-            'l_hand': {'id': 14, 'joint': 'l_low_arm'},
-            'r_shoulder': {'id': 15, 'joint': 'torso_7'},
-            'r_up_arm': {'id': 16, 'joint': 'r_shoulder'},
-            'r_low_arm': {'id': 17, 'joint': 'r_up_arm'},
-            'r_hand': {'id': 18, 'joint': 'r_low_arm'},
-            'l_up_leg': {'id': 19, 'joint': 'root'},
-            'l_low_leg': {'id': 20, 'joint': 'l_up_leg'},
-            'l_foot': {'id': 21, 'joint': 'l_low_leg'},
-            'l_toes': {'id': 22, 'joint': 'l_foot'},
-            'r_up_leg': {'id': 23, 'joint': 'root'},
-            'r_low_leg': {'id': 24, 'joint': 'r_up_leg'},
-            'r_foot': {'id': 25, 'joint': 'r_low_leg'},
-            'r_toes': {'id': 26, 'joint': 'r_foot'},
-        }
+    def __try_to_float(self, s):
+        '''
+        文字列をfloatに変換する
+
+        Parameters
+        ----------
+        s : str
+            変換する文字列
+
+        Returns
+        -------
+        float
+            変換後の値
+        '''
+
+        try:
+            return float(s)
+        except ValueError:
+            return None
+
+    def __getHierarchyTokens(self, lines):
+        '''
+        BVHファイルからHierarchy部をトークンごとの配列に変換する
+
+        Parameters
+        ----------
+        lines : list
+            BVHファイルの行データ
+
+        Returns
+        -------
+        list
+            階層構造のトークン
+        '''
+
+        hierarchy = []
+        index = 0
+        nesting_level = 0
+        is_closeing = False
+
+        for i in range(len(lines)):
+            line = lines.pop(0)
+            hierarchy += line.split()
+            nesting_level += line.count('{') - line.count('}')
+            index += 1
+            if line.count('}') > 0:
+                is_closeing = True
+            if nesting_level == 0 and is_closeing:
+                break
+
+        return hierarchy
+
+    def __setJointData(self, tokens):
+        skeleton = {}
+        joint_name = None
+        joint_list = []
+
+        for i in range(len(tokens)):
+            if tokens[i] == '{':
+                joint_list.append(joint_name)
+            elif tokens[i] == '}':
+                joint_list.pop()
+
+            if tokens[i] == 'ROOT':
+                joint_name = tokens[i+1]
+                skeleton[tokens[i+1]] = {
+                    'joint': None,
+                    'offset': [],
+                    'channels': [],
+                }
+            elif tokens[i] == 'JOINT':
+                joint_name = tokens[i+1]
+                skeleton[tokens[i+1]] = {
+                    'joint': joint_list[-1],
+                    'offset': [],
+                    'channels': [],
+                }
+            elif tokens[i] == 'OFFSET':
+                index = i + 1
+                while self.__try_to_float(tokens[index]) != None:
+                    offset = self.__try_to_float(tokens[index])
+                    skeleton[joint_name]['offset'].append(offset)
+                    index += 1
+            elif tokens[i] == 'CHANNELS':
+                index = i + 2
+                while tokens[index] not in ['OFFSET', 'CHANNELS', 'JOINT', '{']:
+                    skeleton[joint_name]['channels'].append(tokens[index])
+                    index += 1
+
+        return skeleton
 
     def getSkeletonPathToRoot(self, joint):
+        '''
+        指定したjointからrootまでのパスを取得する
+
+        Parameters
+        ----------
+        joint : str
+            パスを取得するjoint
+
+        Returns
+        -------
+        list
+            jointからrootまでのパス
+        '''
+
         path = []
         while joint != None:
             path.append(joint)
             joint = self.skeleton[joint]['joint']
+
         return path
 
     def getMotionDataframe(self):
+        '''
+        BVHファイルからモーションデータを取得する
+
+        Returns
+        -------
+        pandas.DataFrame
+            モーションデータ
+        '''
+
         motion = [m.rstrip().split(' ') for m in self.__getMotion() if m != '']
 
         motion_df = pd.DataFrame(motion)
@@ -100,6 +233,15 @@ class BVHparser:
         return motion_df
 
     def getRelativeMotionDataframe(self, joint):
+        '''
+        BVHファイルからモーションデータを取得する
+
+        Returns
+        -------
+        pandas.DataFrame
+            モーションデータ
+        '''
+
         joint_motion_df = self.getMotionDataframe()[[
             'time',
             f'{joint}_Xposition',
@@ -117,9 +259,17 @@ class BVHparser:
         return joint_motion_df
 
     def getAbsoluteMotionDataframe(self, joint):
+        '''
+        BVHファイルからモーションデータを取得する
+
+        Returns
+        -------
+        pandas.DataFrame
+            モーションデータ
+        '''
+
         motion_df = self.getMotionDataframe()
         path = self.getSkeletonPathToRoot(joint)
-        print(path)
 
         for i in range(1, len(path)):
             motion_df[f'{joint}_Xposition'] += motion_df[f'{path[i]}_Xposition']
@@ -135,3 +285,15 @@ class BVHparser:
         joint_motion_df.columns = [c.replace(f'{joint}_', '') for c in columns]
 
         return joint_motion_df
+
+    def getJoints(self):
+        '''
+        関節名のリストを取得する
+
+        Returns
+        -------
+        list
+            関節名のリスト
+        '''
+
+        return self.skeleton.keys()
