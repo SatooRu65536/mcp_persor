@@ -219,6 +219,19 @@ class BVHparser:
 
         return motion_df
 
+    def __getJointColumns(self, joint):
+        '''
+            データフレームから指定したjointに関連するカラムを取得する
+
+            Returns
+            -------
+            pandas.DataFrame
+                モーションデータ
+        '''
+
+        columns = self.motion_df.filter(like=joint).columns
+        return columns
+
     def getInitialPosition(self, channel_names=['Xposition', 'Yposition', 'Zposition']):
         '''
             初期位置を設定する
@@ -284,7 +297,7 @@ class BVHparser:
 
     def getRelativeMotionDataframe(self, joint):
         '''
-            BVHファイルからモーションデータを取得する
+            BVHファイルから相対的な関節のモーションデータを取得する
 
             Returns
             -------
@@ -292,15 +305,8 @@ class BVHparser:
                 モーションデータ
         '''
 
-        joint_motion_df = self.getMotionDataframe()[[
-            'time',
-            f'{joint}_Xposition',
-            f'{joint}_Yposition',
-            f'{joint}_Zposition',
-            f'{joint}_Xrotation',
-            f'{joint}_Yrotation',
-            f'{joint}_Zrotation',
-        ]]
+        columns = self.__getJointColumns(joint)
+        joint_motion_df = self.getMotionDataframe()[['time', *columns]]
 
         # カラム名から {joint}_ を削除
         columns = joint_motion_df.columns
@@ -310,7 +316,7 @@ class BVHparser:
 
     def getAbsoluteMotionDataframe(self, joint):
         '''
-            BVHファイルからモーションデータを取得する
+            BVHファイルから絶対的な関節のモーションデータを取得する
 
             Returns
             -------
@@ -321,21 +327,24 @@ class BVHparser:
         motion_df = self.getMotionDataframe()
         path = self.getSkeletonPathToRoot(joint)
 
+        joint_columns = self.__getJointColumns(joint)
+        joint_motion_df = motion_df[joint_columns]
+        joint_motion_df.columns = [
+            c.replace(f'{joint}_', '')
+            for c in joint_motion_df.columns
+        ]
+
         for i in range(1, len(path)):
-            motion_df[f'{joint}_Xposition'] += motion_df[f'{path[i]}_Xposition']
-            motion_df[f'{joint}_Yposition'] += motion_df[f'{path[i]}_Yposition']
-            motion_df[f'{joint}_Zposition'] += motion_df[f'{path[i]}_Zposition']
-            motion_df[f'{joint}_Xrotation'] += motion_df[f'{path[i]}_Xrotation']
-            motion_df[f'{joint}_Yrotation'] += motion_df[f'{path[i]}_Yrotation']
-            motion_df[f'{joint}_Zrotation'] += motion_df[f'{path[i]}_Zrotation']
+            path_columns = self.__getJointColumns(path[i])
+            path_motion_df = motion_df[path_columns]
+            path_motion_df.columns = [
+                c.replace(f'{path[i]}_', '')
+                for c in path_motion_df.columns
+            ]
 
-        # motion_df から time と joint 始まりの列を残す
-        columns = motion_df.columns
-        columns = [c for c in columns if c.startswith(joint) or c == 'time']
-        joint_motion_df = motion_df[columns]
+            joint_motion_df += path_motion_df
 
-        # カラム名から {joint}_ を削除
-        joint_motion_df.columns = [c.replace(f'{joint}_', '') for c in columns]
+        joint_motion_df.insert(0, 'time', motion_df['time'])
 
         return joint_motion_df
 
