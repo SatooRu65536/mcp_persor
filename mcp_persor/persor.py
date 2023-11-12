@@ -11,12 +11,13 @@ class BVHparser:
 
         hierarchy_tokens = self.__getHierarchyTokens(lines)
         self.skeleton = self.__getJointData(hierarchy_tokens)
+        self.channels = self.__getChannels()
 
         (frame_time, frames, motion) = self.__getMotionData(lines)
 
         self.frame_time = frame_time
         self.frames = frames
-        self.motion = motion
+        self.motion_df = self.__getMotionDataframe(motion)
 
     def __readFile(self, filename):
         '''
@@ -152,6 +153,36 @@ class BVHparser:
 
         return skeleton
 
+    def __getChannels(self):
+        return ['root_Xposition', 'root_Yposition', 'root_Zposition', 'root_Xrotation', 'root_Yrotation', 'root_Zrotation',
+                'torso_1_Xposition', 'torso_1_Yposition', 'torso_1_Zposition', 'torso_1_Xrotation', 'torso_1_Yrotation', 'torso_1_Zrotation',
+                'torso_2_Xposition', 'torso_2_Yposition', 'torso_2_Zposition', 'torso_2_Xrotation', 'torso_2_Yrotation', 'torso_2_Zrotation',
+                'torso_3_Xposition', 'torso_3_Yposition', 'torso_3_Zposition', 'torso_3_Xrotation', 'torso_3_Yrotation', 'torso_3_Zrotation',
+                'torso_4_Xposition', 'torso_4_Yposition', 'torso_4_Zposition', 'torso_4_Xrotation', 'torso_4_Yrotation', 'torso_4_Zrotation',
+                'torso_5_Xposition', 'torso_5_Yposition', 'torso_5_Zposition', 'torso_5_Xrotation', 'torso_5_Yrotation', 'torso_5_Zrotation',
+                'torso_6_Xposition', 'torso_6_Yposition', 'torso_6_Zposition', 'torso_6_Xrotation', 'torso_6_Yrotation', 'torso_6_Zrotation',
+                'torso_7_Xposition', 'torso_7_Yposition', 'torso_7_Zposition', 'torso_7_Xrotation', 'torso_7_Yrotation', 'torso_7_Zrotation',
+                'neck_1_Xposition', 'neck_1_Yposition', 'neck_1_Zposition', 'neck_1_Xrotation', 'neck_1_Yrotation', 'neck_1_Zrotation',
+                'neck_2_Xposition', 'neck_2_Yposition', 'neck_2_Zposition', 'neck_2_Xrotation', 'neck_2_Yrotation', 'neck_2_Zrotation',
+                'head_Xposition', 'head_Yposition', 'head_Zposition', 'head_Xrotation', 'head_Yrotation', 'head_Zrotation',
+                'l_shoulder_Xposition', 'l_shoulder_Yposition', 'l_shoulder_Zposition', 'l_shoulder_Xrotation', 'l_shoulder_Yrotation', 'l_shoulder_Zrotation',
+                'l_up_arm_Xposition', 'l_up_arm_Yposition', 'l_up_arm_Zposition', 'l_up_arm_Xrotation', 'l_up_arm_Yrotation', 'l_up_arm_Zrotation',
+                'l_low_arm_Xposition', 'l_low_arm_Yposition', 'l_low_arm_Zposition', 'l_low_arm_Xrotation', 'l_low_arm_Yrotation', 'l_low_arm_Zrotation',
+                'l_hand_Xposition', 'l_hand_Yposition', 'l_hand_Zposition', 'l_hand_Xrotation', 'l_hand_Yrotation', 'l_hand_Zrotation',
+                'r_shoulder_Xposition', 'r_shoulder_Yposition', 'r_shoulder_Zposition', 'r_shoulder_Xrotation', 'r_shoulder_Yrotation', 'r_shoulder_Zrotation',
+                'r_up_arm_Xposition', 'r_up_arm_Yposition', 'r_up_arm_Zposition', 'r_up_arm_Xrotation', 'r_up_arm_Yrotation', 'r_up_arm_Zrotation',
+                'r_low_arm_Xposition', 'r_low_arm_Yposition', 'r_low_arm_Zposition', 'r_low_arm_Xrotation', 'r_low_arm_Yrotation', 'r_low_arm_Zrotation',
+                'r_hand_Xposition', 'r_hand_Yposition', 'r_hand_Zposition', 'r_hand_Xrotation', 'r_hand_Yrotation', 'r_hand_Zrotation',
+                'l_up_leg_Xposition', 'l_up_leg_Yposition', 'l_up_leg_Zposition', 'l_up_leg_Xrotation', 'l_up_leg_Yrotation', 'l_up_leg_Zrotation',
+                'l_low_leg_Xposition', 'l_low_leg_Yposition', 'l_low_leg_Zposition', 'l_low_leg_Xrotation', 'l_low_leg_Yrotation', 'l_low_leg_Zrotation',
+                'l_foot_Xposition', 'l_foot_Yposition', 'l_foot_Zposition', 'l_foot_Xrotation', 'l_foot_Yrotation', 'l_foot_Zrotation',
+                'l_toes_Xposition', 'l_toes_Yposition', 'l_toes_Zposition', 'l_toes_Xrotation', 'l_toes_Yrotation', 'l_toes_Zrotation',
+                'r_up_leg_Xposition', 'r_up_leg_Yposition', 'r_up_leg_Zposition', 'r_up_leg_Xrotation', 'r_up_leg_Yrotation', 'r_up_leg_Zrotation',
+                'r_low_leg_Xposition', 'r_low_leg_Yposition', 'r_low_leg_Zposition', 'r_low_leg_Xrotation', 'r_low_leg_Yrotation', 'r_low_leg_Zrotation',
+                'r_foot_Xposition', 'r_foot_Yposition', 'r_foot_Zposition', 'r_foot_Xrotation', 'r_foot_Yrotation', 'r_foot_Zrotation',
+                'r_toes_Xposition', 'r_toes_Yposition', 'r_toes_Zposition', 'r_toes_Xrotation', 'r_toes_Yrotation', 'r_toes_Zrotation',
+                ]
+
     def __getMotionData(self, lines):
         '''
         トークン配列からモーションデータを取得する
@@ -171,14 +202,39 @@ class BVHparser:
         frames = None
         frame_time = None
         for i in range(len(lines)):
-            if 'Frames:' in lines[i]:
+            if 'MOTION' in lines[i]:
+                continue
+            elif 'Frames:' in lines[i]:
                 frame_time = self.__try_to_float(lines[i].split()[1])
             elif 'Frame Time:' in lines[i]:
                 frames = self.__try_to_float(lines[i].split()[2])
             else:
                 motion += [self.__try_to_float(v) for v in lines[i].split()]
 
-        return (frame_time, frames, motion)
+        n = len(self.channels)
+        new_motion = [motion[i:i+n] for i in range(0, len(motion), n)]
+
+        return (frame_time, frames, new_motion)
+
+    def __getMotionDataframe(self, motion):
+        '''
+        BVHファイルからモーションデータを取得する
+
+        Returns
+        -------
+        pandas.DataFrame
+            モーションデータ
+        '''
+
+        motion_df = pd.DataFrame(motion)
+        motion_df.columns = self.channels
+        time = np.arange(0, motion_df.shape[0]) * self.frame_time
+        motion_df.insert(0, 'time', time)
+        for column in motion_df.columns:
+            motion_df[column] = pd.to_numeric(
+                motion_df[column], errors='coerce')
+
+        return motion_df
 
     def getSkeletonPathToRoot(self, joint):
         '''
@@ -212,44 +268,7 @@ class BVHparser:
             モーションデータ
         '''
 
-        motion = [m.rstrip().split(' ') for m in self.__getMotion() if m != '']
-
-        motion_df = pd.DataFrame(motion)
-        motion_df.columns = [
-            'root_Xposition', 'root_Yposition', 'root_Zposition', 'root_Xrotation', 'root_Yrotation', 'root_Zrotation',
-            'torso_1_Xposition', 'torso_1_Yposition', 'torso_1_Zposition', 'torso_1_Xrotation', 'torso_1_Yrotation', 'torso_1_Zrotation',
-            'torso_2_Xposition', 'torso_2_Yposition', 'torso_2_Zposition', 'torso_2_Xrotation', 'torso_2_Yrotation', 'torso_2_Zrotation',
-            'torso_3_Xposition', 'torso_3_Yposition', 'torso_3_Zposition', 'torso_3_Xrotation', 'torso_3_Yrotation', 'torso_3_Zrotation',
-            'torso_4_Xposition', 'torso_4_Yposition', 'torso_4_Zposition', 'torso_4_Xrotation', 'torso_4_Yrotation', 'torso_4_Zrotation',
-            'torso_5_Xposition', 'torso_5_Yposition', 'torso_5_Zposition', 'torso_5_Xrotation', 'torso_5_Yrotation', 'torso_5_Zrotation',
-            'torso_6_Xposition', 'torso_6_Yposition', 'torso_6_Zposition', 'torso_6_Xrotation', 'torso_6_Yrotation', 'torso_6_Zrotation',
-            'torso_7_Xposition', 'torso_7_Yposition', 'torso_7_Zposition', 'torso_7_Xrotation', 'torso_7_Yrotation', 'torso_7_Zrotation',
-            'neck_1_Xposition', 'neck_1_Yposition', 'neck_1_Zposition', 'neck_1_Xrotation', 'neck_1_Yrotation', 'neck_1_Zrotation',
-            'neck_2_Xposition', 'neck_2_Yposition', 'neck_2_Zposition', 'neck_2_Xrotation', 'neck_2_Yrotation', 'neck_2_Zrotation',
-            'head_Xposition', 'head_Yposition', 'head_Zposition', 'head_Xrotation', 'head_Yrotation', 'head_Zrotation',
-            'l_shoulder_Xposition', 'l_shoulder_Yposition', 'l_shoulder_Zposition', 'l_shoulder_Xrotation', 'l_shoulder_Yrotation', 'l_shoulder_Zrotation',
-            'l_up_arm_Xposition', 'l_up_arm_Yposition', 'l_up_arm_Zposition', 'l_up_arm_Xrotation', 'l_up_arm_Yrotation', 'l_up_arm_Zrotation',
-            'l_low_arm_Xposition', 'l_low_arm_Yposition', 'l_low_arm_Zposition', 'l_low_arm_Xrotation', 'l_low_arm_Yrotation', 'l_low_arm_Zrotation',
-            'l_hand_Xposition', 'l_hand_Yposition', 'l_hand_Zposition', 'l_hand_Xrotation', 'l_hand_Yrotation', 'l_hand_Zrotation',
-            'r_shoulder_Xposition', 'r_shoulder_Yposition', 'r_shoulder_Zposition', 'r_shoulder_Xrotation', 'r_shoulder_Yrotation', 'r_shoulder_Zrotation',
-            'r_up_arm_Xposition', 'r_up_arm_Yposition', 'r_up_arm_Zposition', 'r_up_arm_Xrotation', 'r_up_arm_Yrotation', 'r_up_arm_Zrotation',
-            'r_low_arm_Xposition', 'r_low_arm_Yposition', 'r_low_arm_Zposition', 'r_low_arm_Xrotation', 'r_low_arm_Yrotation', 'r_low_arm_Zrotation',
-            'r_hand_Xposition', 'r_hand_Yposition', 'r_hand_Zposition', 'r_hand_Xrotation', 'r_hand_Yrotation', 'r_hand_Zrotation',
-            'l_up_leg_Xposition', 'l_up_leg_Yposition', 'l_up_leg_Zposition', 'l_up_leg_Xrotation', 'l_up_leg_Yrotation', 'l_up_leg_Zrotation',
-            'l_low_leg_Xposition', 'l_low_leg_Yposition', 'l_low_leg_Zposition', 'l_low_leg_Xrotation', 'l_low_leg_Yrotation', 'l_low_leg_Zrotation',
-            'l_foot_Xposition', 'l_foot_Yposition', 'l_foot_Zposition', 'l_foot_Xrotation', 'l_foot_Yrotation', 'l_foot_Zrotation',
-            'l_toes_Xposition', 'l_toes_Yposition', 'l_toes_Zposition', 'l_toes_Xrotation', 'l_toes_Yrotation', 'l_toes_Zrotation',
-            'r_up_leg_Xposition', 'r_up_leg_Yposition', 'r_up_leg_Zposition', 'r_up_leg_Xrotation', 'r_up_leg_Yrotation', 'r_up_leg_Zrotation',
-            'r_low_leg_Xposition', 'r_low_leg_Yposition', 'r_low_leg_Zposition', 'r_low_leg_Xrotation', 'r_low_leg_Yrotation', 'r_low_leg_Zrotation',
-            'r_foot_Xposition', 'r_foot_Yposition', 'r_foot_Zposition', 'r_foot_Xrotation', 'r_foot_Yrotation', 'r_foot_Zrotation',
-            'r_toes_Xposition', 'r_toes_Yposition', 'r_toes_Zposition', 'r_toes_Xrotation', 'r_toes_Yrotation', 'r_toes_Zrotation',
-        ]
-        time = np.arange(0, motion_df.shape[0]) * self.frame_time
-        motion_df.insert(0, 'time', time)
-        for column in motion_df.columns:
-            motion_df[column] = pd.to_numeric(
-                motion_df[column], errors='coerce')
-        return motion_df
+        return self.motion_df.copy()
 
     def getRelativeMotionDataframe(self, joint):
         '''
@@ -316,3 +335,15 @@ class BVHparser:
         '''
 
         return self.skeleton.keys()
+
+    def getChannels(self):
+        '''
+        チャンネル名のリストを取得する
+
+        Returns
+        -------
+        list
+            チャンネル名のリスト
+        '''
+
+        return self.channels
