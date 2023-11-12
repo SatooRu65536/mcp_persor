@@ -232,6 +232,40 @@ class BVHparser:
         columns = self.motion_df.filter(like=joint).columns
         return columns
 
+    def getJointOffset(self, joint):
+        '''
+            指定したjointのoffsetを取得する
+
+            Parameters
+            ----------
+            joint : str
+                offsetを取得するjoint
+
+            Returns
+            -------
+            list
+                offset
+        '''
+
+        return self.skeleton[joint]['offset']
+
+    def setJointOffset(self, joint, offset):
+        '''
+            指定したjointのoffsetを設定する
+
+            Parameters
+            ----------
+            joint : str
+                offsetを設定するjoint
+            offset : list
+                offset
+        '''
+
+        if len(offset) != len(self.skeleton[joint]['offset']):
+            raise ValueError(f'offset length must be 3. but got {len(offset)}')
+
+        self.skeleton[joint]['offset'] = offset
+
     def getInitialPosition(self, channel_names=['Xposition', 'Yposition', 'Zposition']):
         '''
             初期位置を設定する
