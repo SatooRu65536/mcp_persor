@@ -188,9 +188,9 @@ class BVHparser:
             if 'MOTION' in lines[i]:
                 continue
             elif 'Frames:' in lines[i]:
-                frame_time = self.__try_to_float(lines[i].split()[1])
+                frames = self.__try_to_float(lines[i].split()[1])
             elif 'Frame Time:' in lines[i]:
-                frames = self.__try_to_float(lines[i].split()[2])
+                frame_time = self.__try_to_float(lines[i].split()[2])
             else:
                 motion += [self.__try_to_float(v) for v in lines[i].split()]
 
