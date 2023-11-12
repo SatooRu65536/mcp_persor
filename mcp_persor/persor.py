@@ -325,6 +325,9 @@ class BVHparser:
             motion_df[f'{joint}_Xposition'] += motion_df[f'{path[i]}_Xposition']
             motion_df[f'{joint}_Yposition'] += motion_df[f'{path[i]}_Yposition']
             motion_df[f'{joint}_Zposition'] += motion_df[f'{path[i]}_Zposition']
+            motion_df[f'{joint}_Xrotation'] += motion_df[f'{path[i]}_Xrotation']
+            motion_df[f'{joint}_Yrotation'] += motion_df[f'{path[i]}_Yrotation']
+            motion_df[f'{joint}_Zrotation'] += motion_df[f'{path[i]}_Zrotation']
 
         # motion_df から time と joint 始まりの列を残す
         columns = motion_df.columns
