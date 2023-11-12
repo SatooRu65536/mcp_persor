@@ -117,6 +117,7 @@ class BVHparser:
         joint_name = None
         joint_list = []
 
+        reserved_words = ['OFFSET', 'CHANNELS', 'JOINT', '{', 'End']
         for i in range(len(tokens)):
             if tokens[i] == '{':
                 joint_list.append(joint_name)
@@ -146,7 +147,7 @@ class BVHparser:
                 i = index - 1
             elif tokens[i] == 'CHANNELS':
                 index = i + 2
-                while tokens[index] not in ['OFFSET', 'CHANNELS', 'JOINT', '{']:
+                while tokens[index] not in reserved_words:
                     skeleton[joint_name]['channels'].append(tokens[index])
                     index += 1
                 i = index - 1
@@ -154,34 +155,11 @@ class BVHparser:
         return skeleton
 
     def __getChannels(self):
-        return ['root_Xposition', 'root_Yposition', 'root_Zposition', 'root_Xrotation', 'root_Yrotation', 'root_Zrotation',
-                'torso_1_Xposition', 'torso_1_Yposition', 'torso_1_Zposition', 'torso_1_Xrotation', 'torso_1_Yrotation', 'torso_1_Zrotation',
-                'torso_2_Xposition', 'torso_2_Yposition', 'torso_2_Zposition', 'torso_2_Xrotation', 'torso_2_Yrotation', 'torso_2_Zrotation',
-                'torso_3_Xposition', 'torso_3_Yposition', 'torso_3_Zposition', 'torso_3_Xrotation', 'torso_3_Yrotation', 'torso_3_Zrotation',
-                'torso_4_Xposition', 'torso_4_Yposition', 'torso_4_Zposition', 'torso_4_Xrotation', 'torso_4_Yrotation', 'torso_4_Zrotation',
-                'torso_5_Xposition', 'torso_5_Yposition', 'torso_5_Zposition', 'torso_5_Xrotation', 'torso_5_Yrotation', 'torso_5_Zrotation',
-                'torso_6_Xposition', 'torso_6_Yposition', 'torso_6_Zposition', 'torso_6_Xrotation', 'torso_6_Yrotation', 'torso_6_Zrotation',
-                'torso_7_Xposition', 'torso_7_Yposition', 'torso_7_Zposition', 'torso_7_Xrotation', 'torso_7_Yrotation', 'torso_7_Zrotation',
-                'neck_1_Xposition', 'neck_1_Yposition', 'neck_1_Zposition', 'neck_1_Xrotation', 'neck_1_Yrotation', 'neck_1_Zrotation',
-                'neck_2_Xposition', 'neck_2_Yposition', 'neck_2_Zposition', 'neck_2_Xrotation', 'neck_2_Yrotation', 'neck_2_Zrotation',
-                'head_Xposition', 'head_Yposition', 'head_Zposition', 'head_Xrotation', 'head_Yrotation', 'head_Zrotation',
-                'l_shoulder_Xposition', 'l_shoulder_Yposition', 'l_shoulder_Zposition', 'l_shoulder_Xrotation', 'l_shoulder_Yrotation', 'l_shoulder_Zrotation',
-                'l_up_arm_Xposition', 'l_up_arm_Yposition', 'l_up_arm_Zposition', 'l_up_arm_Xrotation', 'l_up_arm_Yrotation', 'l_up_arm_Zrotation',
-                'l_low_arm_Xposition', 'l_low_arm_Yposition', 'l_low_arm_Zposition', 'l_low_arm_Xrotation', 'l_low_arm_Yrotation', 'l_low_arm_Zrotation',
-                'l_hand_Xposition', 'l_hand_Yposition', 'l_hand_Zposition', 'l_hand_Xrotation', 'l_hand_Yrotation', 'l_hand_Zrotation',
-                'r_shoulder_Xposition', 'r_shoulder_Yposition', 'r_shoulder_Zposition', 'r_shoulder_Xrotation', 'r_shoulder_Yrotation', 'r_shoulder_Zrotation',
-                'r_up_arm_Xposition', 'r_up_arm_Yposition', 'r_up_arm_Zposition', 'r_up_arm_Xrotation', 'r_up_arm_Yrotation', 'r_up_arm_Zrotation',
-                'r_low_arm_Xposition', 'r_low_arm_Yposition', 'r_low_arm_Zposition', 'r_low_arm_Xrotation', 'r_low_arm_Yrotation', 'r_low_arm_Zrotation',
-                'r_hand_Xposition', 'r_hand_Yposition', 'r_hand_Zposition', 'r_hand_Xrotation', 'r_hand_Yrotation', 'r_hand_Zrotation',
-                'l_up_leg_Xposition', 'l_up_leg_Yposition', 'l_up_leg_Zposition', 'l_up_leg_Xrotation', 'l_up_leg_Yrotation', 'l_up_leg_Zrotation',
-                'l_low_leg_Xposition', 'l_low_leg_Yposition', 'l_low_leg_Zposition', 'l_low_leg_Xrotation', 'l_low_leg_Yrotation', 'l_low_leg_Zrotation',
-                'l_foot_Xposition', 'l_foot_Yposition', 'l_foot_Zposition', 'l_foot_Xrotation', 'l_foot_Yrotation', 'l_foot_Zrotation',
-                'l_toes_Xposition', 'l_toes_Yposition', 'l_toes_Zposition', 'l_toes_Xrotation', 'l_toes_Yrotation', 'l_toes_Zrotation',
-                'r_up_leg_Xposition', 'r_up_leg_Yposition', 'r_up_leg_Zposition', 'r_up_leg_Xrotation', 'r_up_leg_Yrotation', 'r_up_leg_Zrotation',
-                'r_low_leg_Xposition', 'r_low_leg_Yposition', 'r_low_leg_Zposition', 'r_low_leg_Xrotation', 'r_low_leg_Yrotation', 'r_low_leg_Zrotation',
-                'r_foot_Xposition', 'r_foot_Yposition', 'r_foot_Zposition', 'r_foot_Xrotation', 'r_foot_Yrotation', 'r_foot_Zrotation',
-                'r_toes_Xposition', 'r_toes_Yposition', 'r_toes_Zposition', 'r_toes_Xrotation', 'r_toes_Yrotation', 'r_toes_Zrotation',
-                ]
+        channels = []
+        for j in self.skeleton.keys():
+            channels += [f'{j}_{c}' for c in self.skeleton[j]['channels']]
+
+        return channels
 
     def __getMotionData(self, lines):
         '''
