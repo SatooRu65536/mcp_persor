@@ -5,24 +5,24 @@ import re
 
 class BVHparser:
     def __init__(self, filename):
-        self.bvh = self.__readFile(filename)
+        self.bvh = self.__readfile(filename)
 
         lines = self.bvh.split('\n')
 
-        hierarchy_tokens = self.__getHierarchyTokens(lines)
-        (skeleton, root) = self.__getJointData(hierarchy_tokens)
+        hierarchy_tokens = self.__get_hierarchy_tokens(lines)
+        (skeleton, root) = self.__get_joint(hierarchy_tokens)
         self.skeleton = skeleton
         self.root = root
-        self.channels = self.__getChannels()
+        self.channels = self.__get_channels()
 
-        (frame_time, frames, motion) = self.__getMotionData(lines)
+        (frame_time, frames, motion) = self.__get_motion(lines)
 
         self.frame_time = frame_time
         self.frames = frames
-        self.default_motion_df = self.__getDefaultMotionDataframe(motion)
+        self.default_motion_df = self.__get_default_motion_df(motion)
         self.motion_df = self.default_motion_df.copy()
 
-    def __readFile(self, filename):
+    def __readfile(self, filename):
         '''
             BVHファイルを読み込む
 
@@ -34,20 +34,6 @@ class BVHparser:
 
         with open(filename, 'r') as f:
             return f.read()
-
-    def __getMotion(self):
-        '''
-            BVHファイルからモーションデータを取得する
-
-            Returns
-            -------
-            list
-                モーションデータ
-        '''
-
-        motion = self.bvh.split('Frame Time:')[1]
-        motion = motion.split("\n")
-        return motion[1:]
 
     def __try_to_float(self, s):
         '''
@@ -69,7 +55,7 @@ class BVHparser:
         except ValueError:
             return None
 
-    def __getHierarchyTokens(self, lines):
+    def __get_hierarchy_tokens(self, lines):
         '''
             BVHファイルからHierarchy部をトークンごとの配列に変換する
 
@@ -101,7 +87,7 @@ class BVHparser:
 
         return tokens
 
-    def __getJointData(self, tokens):
+    def __get_joint(self, tokens):
         '''
             トークン配列からJointデータを取得する
 
@@ -159,14 +145,14 @@ class BVHparser:
 
         return (skeleton, root)
 
-    def __getChannels(self):
+    def __get_channels(self):
         channels = []
         for j in self.skeleton.keys():
             channels += [f'{j}_{c}' for c in self.skeleton[j]['channels']]
 
         return channels
 
-    def __getMotionData(self, lines):
+    def __get_motion(self, lines):
         '''
             トークン配列からモーションデータを取得する
 
@@ -199,7 +185,7 @@ class BVHparser:
 
         return (frame_time, frames, new_motion)
 
-    def __getDefaultMotionDataframe(self, motion):
+    def __get_default_motion_df(self, motion):
         '''
             BVHファイルからモーションデータを取得する
 
@@ -219,7 +205,7 @@ class BVHparser:
 
         return motion_df
 
-    def __getJointColumns(self, joint):
+    def __get_joint_columns(self, joint):
         '''
             データフレームから指定したjointに関連するカラムを取得する
 
@@ -232,7 +218,7 @@ class BVHparser:
         columns = self.motion_df.filter(like=joint).columns
         return columns
 
-    def getJointOffset(self, joint):
+    def get_joint_offset(self, joint):
         '''
             指定したjointのoffsetを取得する
 
@@ -249,7 +235,7 @@ class BVHparser:
 
         return self.skeleton[joint]['offset']
 
-    def setJointOffset(self, joint, offset):
+    def set_joint_offset(self, joint, offset):
         '''
             指定したjointのoffsetを設定する
 
@@ -266,7 +252,7 @@ class BVHparser:
 
         self.skeleton[joint]['offset'] = offset
 
-    def getInitialPosition(self, channel_names=['Xposition', 'Yposition', 'Zposition']):
+    def get_initial_position(self, channel_names=['Xposition', 'Yposition', 'Zposition']):
         '''
             初期位置を設定する
 
@@ -279,7 +265,7 @@ class BVHparser:
         motion_df = self.default_motion_df.copy()
         return [motion_df[f'{self.root}_{channel_name}'][0] for channel_name in channel_names]
 
-    def setInitialPosition(self, position, channel_names=['Xposition', 'Yposition', 'Zposition']):
+    def set_initial_position(self, position, channel_names=['Xposition', 'Yposition', 'Zposition']):
         '''
             初期位置を設定する
 
@@ -295,7 +281,7 @@ class BVHparser:
 
         self.motion_df = motion_df
 
-    def getSkeletonPathToRoot(self, joint):
+    def get_skeleton_path2root(self, joint):
         '''
             指定したjointからrootまでのパスを取得する
 
@@ -317,7 +303,7 @@ class BVHparser:
 
         return path
 
-    def getMotionDataframe(self):
+    def get_motion_df(self):
         '''
             BVHファイルからモーションデータを取得する
 
@@ -329,7 +315,7 @@ class BVHparser:
 
         return self.motion_df.copy()
 
-    def getRelativeMotionDataframe(self, joint):
+    def get_relative_motion_df(self, joint):
         '''
             BVHファイルから相対的な関節のモーションデータを取得する
 
@@ -339,8 +325,8 @@ class BVHparser:
                 モーションデータ
         '''
 
-        columns = self.__getJointColumns(joint)
-        joint_motion_df = self.getMotionDataframe()[['time', *columns]]
+        columns = self.__get_joint_columns(joint)
+        joint_motion_df = self.get_motion_df()[['time', *columns]]
 
         # カラム名から {joint}_ を削除
         columns = joint_motion_df.columns
@@ -348,7 +334,7 @@ class BVHparser:
 
         return joint_motion_df
 
-    def getAbsoluteMotionDataframe(self, joint):
+    def get_absolute_motiondf(self, joint):
         '''
             BVHファイルから絶対的な関節のモーションデータを取得する
 
@@ -358,10 +344,10 @@ class BVHparser:
                 モーションデータ
         '''
 
-        motion_df = self.getMotionDataframe()
-        path = self.getSkeletonPathToRoot(joint)
+        motion_df = self.get_motion_df()
+        path = self.get_skeleton_path2root(joint)
 
-        joint_columns = self.__getJointColumns(joint)
+        joint_columns = self.__get_joint_columns(joint)
         joint_motion_df = motion_df[joint_columns]
         joint_motion_df.columns = [
             c.replace(f'{joint}_', '')
@@ -369,7 +355,7 @@ class BVHparser:
         ]
 
         for i in range(1, len(path)):
-            path_columns = self.__getJointColumns(path[i])
+            path_columns = self.__get_joint_columns(path[i])
             path_motion_df = motion_df[path_columns]
             path_motion_df.columns = [
                 c.replace(f'{path[i]}_', '')
@@ -382,7 +368,7 @@ class BVHparser:
 
         return joint_motion_df
 
-    def getJoints(self):
+    def get_joints(self):
         '''
             関節名のリストを取得する
 
@@ -394,7 +380,7 @@ class BVHparser:
 
         return self.skeleton.keys()
 
-    def getChannels(self):
+    def get_channels(self):
         '''
             チャンネル名のリストを取得する
 
