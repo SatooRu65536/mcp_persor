@@ -24,12 +24,12 @@ class BVHparser:
 
     def __readFile(self, filename):
         '''
-        BVHファイルを読み込む
+            BVHファイルを読み込む
 
-        Parameters
-        ----------
-        filename : str
-            BVHファイルのパス
+            Parameters
+            ----------
+            filename : str
+                BVHファイルのパス
         '''
 
         with open(filename, 'r') as f:
@@ -37,12 +37,12 @@ class BVHparser:
 
     def __getMotion(self):
         '''
-        BVHファイルからモーションデータを取得する
+            BVHファイルからモーションデータを取得する
 
-        Returns
-        -------
-        list
-            モーションデータ
+            Returns
+            -------
+            list
+                モーションデータ
         '''
 
         motion = self.bvh.split('Frame Time:')[1]
@@ -51,17 +51,17 @@ class BVHparser:
 
     def __try_to_float(self, s):
         '''
-        文字列をfloatに変換する
+            文字列をfloatに変換する
 
-        Parameters
-        ----------
-        s : str
-            変換する文字列
+            Parameters
+            ----------
+            s : str
+                変換する文字列
 
-        Returns
-        -------
-        float
-            変換後の値
+            Returns
+            -------
+            float
+                変換後の値
         '''
 
         try:
@@ -71,17 +71,17 @@ class BVHparser:
 
     def __getHierarchyTokens(self, lines):
         '''
-        BVHファイルからHierarchy部をトークンごとの配列に変換する
+            BVHファイルからHierarchy部をトークンごとの配列に変換する
 
-        Parameters
-        ----------
-        lines : list
-            BVHファイルの行データ
+            Parameters
+            ----------
+            lines : list
+                BVHファイルの行データ
 
-        Returns
-        -------
-        list
-            階層構造のトークン
+            Returns
+            -------
+            list
+                階層構造のトークン
         '''
 
         tokens = []
@@ -103,17 +103,17 @@ class BVHparser:
 
     def __getJointData(self, tokens):
         '''
-        トークン配列からJointデータを取得する
+            トークン配列からJointデータを取得する
 
-        Parameters
-        ----------
-        tokens : list
-            Hierarchy部のトークン
+            Parameters
+            ----------
+            tokens : list
+                Hierarchy部のトークン
 
-        Returns
-        -------
-        dict
-            Jointデータ
+            Returns
+            -------
+            dict
+                Jointデータ
         '''
 
         skeleton = {}
@@ -168,17 +168,17 @@ class BVHparser:
 
     def __getMotionData(self, lines):
         '''
-        トークン配列からモーションデータを取得する
+            トークン配列からモーションデータを取得する
 
-        Parameters
-        ----------
-        tokens : list
-            Motion部のトークン
+            Parameters
+            ----------
+            tokens : list
+                Motion部のトークン
 
-        Returns
-        -------
-        list
-            モーションデータ
+            Returns
+            -------
+            list
+                モーションデータ
         '''
 
         motion = []
@@ -201,12 +201,12 @@ class BVHparser:
 
     def __getDefaultMotionDataframe(self, motion):
         '''
-        BVHファイルからモーションデータを取得する
+            BVHファイルからモーションデータを取得する
 
-        Returns
-        -------
-        pandas.DataFrame
-            モーションデータ
+            Returns
+            -------
+            pandas.DataFrame
+                モーションデータ
         '''
 
         motion_df = pd.DataFrame(motion)
@@ -221,12 +221,12 @@ class BVHparser:
 
     def getInitialPosition(self, channel_names=['Xposition', 'Yposition', 'Zposition']):
         '''
-        初期位置を設定する
+            初期位置を設定する
 
-        Parameters
-        ----------
-        position : list
-            初期位置
+            Parameters
+            ----------
+            position : list
+                初期位置
         '''
 
         motion_df = self.default_motion_df.copy()
@@ -234,12 +234,12 @@ class BVHparser:
 
     def setInitialPosition(self, position, channel_names=['Xposition', 'Yposition', 'Zposition']):
         '''
-        初期位置を設定する
+            初期位置を設定する
 
-        Parameters
-        ----------
-        position : list
-            初期位置
+            Parameters
+            ----------
+            position : list
+                初期位置
         '''
 
         motion_df = self.default_motion_df.copy()
@@ -250,17 +250,17 @@ class BVHparser:
 
     def getSkeletonPathToRoot(self, joint):
         '''
-        指定したjointからrootまでのパスを取得する
+            指定したjointからrootまでのパスを取得する
 
-        Parameters
-        ----------
-        joint : str
-            パスを取得するjoint
+            Parameters
+            ----------
+            joint : str
+                パスを取得するjoint
 
-        Returns
-        -------
-        list
-            jointからrootまでのパス
+            Returns
+            -------
+            list
+                jointからrootまでのパス
         '''
 
         path = []
@@ -272,24 +272,24 @@ class BVHparser:
 
     def getMotionDataframe(self):
         '''
-        BVHファイルからモーションデータを取得する
+            BVHファイルからモーションデータを取得する
 
-        Returns
-        -------
-        pandas.DataFrame
-            モーションデータ
+            Returns
+            -------
+            pandas.DataFrame
+                モーションデータ
         '''
 
         return self.motion_df.copy()
 
     def getRelativeMotionDataframe(self, joint):
         '''
-        BVHファイルからモーションデータを取得する
+            BVHファイルからモーションデータを取得する
 
-        Returns
-        -------
-        pandas.DataFrame
-            モーションデータ
+            Returns
+            -------
+            pandas.DataFrame
+                モーションデータ
         '''
 
         joint_motion_df = self.getMotionDataframe()[[
@@ -310,12 +310,12 @@ class BVHparser:
 
     def getAbsoluteMotionDataframe(self, joint):
         '''
-        BVHファイルからモーションデータを取得する
+            BVHファイルからモーションデータを取得する
 
-        Returns
-        -------
-        pandas.DataFrame
-            モーションデータ
+            Returns
+            -------
+            pandas.DataFrame
+                モーションデータ
         '''
 
         motion_df = self.getMotionDataframe()
@@ -338,24 +338,24 @@ class BVHparser:
 
     def getJoints(self):
         '''
-        関節名のリストを取得する
+            関節名のリストを取得する
 
-        Returns
-        -------
-        list
-            関節名のリスト
+            Returns
+            -------
+            list
+                関節名のリスト
         '''
 
         return self.skeleton.keys()
 
     def getChannels(self):
         '''
-        チャンネル名のリストを取得する
+            チャンネル名のリストを取得する
 
-        Returns
-        -------
-        list
-            チャンネル名のリスト
+            Returns
+            -------
+            list
+                チャンネル名のリスト
         '''
 
         return self.channels
