@@ -3,9 +3,10 @@ from mcp_persor.plot import plot
 
 bvhp = BVHparser('bvh/jump.bvh')
 motion_df = bvhp.getMotionDataframe()
+bvhp.setInitialPosition([0, 100, 0])
 
-joint_name = 'head'
 
+joint_name = 'root'
 relative_motion_df = bvhp.getRelativeMotionDataframe(joint_name)
 absolute_motion_df = bvhp.getAbsoluteMotionDataframe(joint_name)
 

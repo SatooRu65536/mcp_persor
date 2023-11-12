@@ -10,14 +10,17 @@ class BVHparser:
         lines = self.bvh.split('\n')
 
         hierarchy_tokens = self.__getHierarchyTokens(lines)
-        self.skeleton = self.__getJointData(hierarchy_tokens)
+        (skeleton, root) = self.__getJointData(hierarchy_tokens)
+        self.skeleton = skeleton
+        self.root = root
         self.channels = self.__getChannels()
 
         (frame_time, frames, motion) = self.__getMotionData(lines)
 
         self.frame_time = frame_time
         self.frames = frames
-        self.motion_df = self.__getMotionDataframe(motion)
+        self.default_motion_df = self.__getDefaultMotionDataframe(motion)
+        self.motion_df = self.default_motion_df.copy()
 
     def __readFile(self, filename):
         '''
@@ -115,6 +118,7 @@ class BVHparser:
 
         skeleton = {}
         joint_name = None
+        root = None
         joint_list = []
 
         reserved_words = ['OFFSET', 'CHANNELS', 'JOINT', '{', 'End']
@@ -125,6 +129,7 @@ class BVHparser:
                 joint_list.pop()
 
             if tokens[i] == 'ROOT':
+                root = tokens[i+1]
                 joint_name = tokens[i+1]
                 skeleton[tokens[i+1]] = {
                     'joint': None,
@@ -152,7 +157,7 @@ class BVHparser:
                     index += 1
                 i = index - 1
 
-        return skeleton
+        return (skeleton, root)
 
     def __getChannels(self):
         channels = []
@@ -194,7 +199,7 @@ class BVHparser:
 
         return (frame_time, frames, new_motion)
 
-    def __getMotionDataframe(self, motion):
+    def __getDefaultMotionDataframe(self, motion):
         '''
         BVHファイルからモーションデータを取得する
 
@@ -213,6 +218,35 @@ class BVHparser:
                 motion_df[column], errors='coerce')
 
         return motion_df
+
+    def getInitialPosition(self, channel_names=['Xposition', 'Yposition', 'Zposition']):
+        '''
+        初期位置を設定する
+
+        Parameters
+        ----------
+        position : list
+            初期位置
+        '''
+
+        motion_df = self.default_motion_df.copy()
+        return [motion_df[f'{self.root}_{channel_name}'][0] for channel_name in channel_names]
+
+    def setInitialPosition(self, position, channel_names=['Xposition', 'Yposition', 'Zposition']):
+        '''
+        初期位置を設定する
+
+        Parameters
+        ----------
+        position : list
+            初期位置
+        '''
+
+        motion_df = self.default_motion_df.copy()
+        for i, channel_name in enumerate(channel_names):
+            motion_df[f'{self.root}_{channel_name}'] = position[i]
+
+        self.motion_df = motion_df
 
     def getSkeletonPathToRoot(self, joint):
         '''
