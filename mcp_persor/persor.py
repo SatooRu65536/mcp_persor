@@ -454,6 +454,35 @@ class BVHparser:
 
         self.motion_df = motion_df
 
+    def get_initial_rotation(self, channel_names=['Xrotation', 'Yposition', 'Zposition']):
+        '''
+            初期回転量を取得する
+
+            Parameters
+            ----------
+            rotation : list
+                初期回転量
+        '''
+
+        motion_df = self.default_motion_df.copy()
+        return [motion_df[f'{self.root}_{channel_name}'][0] for channel_name in channel_names]
+
+    def set_initial_rotation(self, rotation, channel_names=['Xrotation', 'Yrotation', 'Zrotation']):
+        '''
+            初期位置を設定する
+
+            Parameters
+            ----------
+            rotation : list
+                初期回転量
+        '''
+
+        motion_df = self.default_motion_df.copy()
+        for i, channel_name in enumerate(channel_names):
+            motion_df[f'{self.root}_{channel_name}'] = position[i]
+
+        self.motion_df = motion_df
+
     def get_skeleton_path2root(self, joint):
         '''
             指定したjointからrootまでのパスを取得する
