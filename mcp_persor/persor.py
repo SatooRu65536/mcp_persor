@@ -294,7 +294,7 @@ class BVHparser:
 
         return joint_motion_df
 
-    def __get_absolute_motiondf(self, joint):
+    def __get_absolute_motion_df(self, joint):
         '''
             BVHファイルから絶対的な関節のモーションデータを取得する
 
@@ -466,7 +466,7 @@ class BVHparser:
         if mode == 'relative':
             return self.__get_relative_motion_df(joint)
         elif mode == 'absolute':
-            return self.__get_absolute_motiondf(joint)
+            return self.__get_absolute_motion_df(joint)
         else:
             raise ValueError(f'invalid mode: {mode}')
 
