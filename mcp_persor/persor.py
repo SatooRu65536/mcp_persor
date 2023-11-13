@@ -425,7 +425,7 @@ class BVHparser:
 
         self.skeleton[joint]['offset'] = offset
 
-    def get_initial_position(self, channel_names=['Xposition', 'Yposition', 'Zposition']):
+    def get_initial_position(self, index=100, channel_names=['Xposition', 'Yposition', 'Zposition']):
         '''
             初期位置を取得する
 
@@ -436,7 +436,7 @@ class BVHparser:
         '''
 
         motion_df = self.default_motion_df.copy()
-        return [motion_df[f'{self.root}_{channel_name}'][0] for channel_name in channel_names]
+        return [motion_df[f'{self.root}_{channel_name}'][index] for channel_name in channel_names]
 
     def set_initial_position(self, position, channel_names=['Xposition', 'Yposition', 'Zposition']):
         '''
@@ -448,13 +448,13 @@ class BVHparser:
                 初期位置
         '''
 
-        motion_df = self.default_motion_df.copy()
+        init_pos = self.get_initial_position()
+        diff_pos = np.array(position) - np.array(init_pos)
+
         for i, channel_name in enumerate(channel_names):
-            motion_df[f'{self.root}_{channel_name}'] = position[i]
+            self.motion_df[f'{self.root}_{channel_name}'] += diff_pos[i]
 
-        self.motion_df = motion_df
-
-    def get_initial_rotation(self, channel_names=['Xrotation', 'Yposition', 'Zposition']):
+    def get_initial_rotation(self, index=1, channel_names=['Xrotation', 'Yrotation', 'Zrotation']):
         '''
             初期回転量を取得する
 
@@ -465,7 +465,7 @@ class BVHparser:
         '''
 
         motion_df = self.default_motion_df.copy()
-        return [motion_df[f'{self.root}_{channel_name}'][0] for channel_name in channel_names]
+        return [motion_df[f'{self.root}_{channel_name}'][index] for channel_name in channel_names]
 
     def set_initial_rotation(self, rotation, channel_names=['Xrotation', 'Yrotation', 'Zrotation']):
         '''
@@ -477,11 +477,11 @@ class BVHparser:
                 初期回転量
         '''
 
-        motion_df = self.default_motion_df.copy()
-        for i, channel_name in enumerate(channel_names):
-            motion_df[f'{self.root}_{channel_name}'] = position[i]
+        init_rot = self.get_initial_rotation()
+        diff_rot = np.array(rotation) - np.array(init_rot)
 
-        self.motion_df = motion_df
+        for i, channel_name in enumerate(channel_names):
+            self.motion_df[f'{self.root}_{channel_name}'] += diff_rot[i]
 
     def get_skeleton_path2root(self, joint):
         '''
@@ -637,7 +637,6 @@ class BVHparser:
 
         skelton_str = self.__get_skeleton_str(self.root)
         columns = self.__get_columns(self.root)
-        print(columns)
         motion_df = self.get_motion_df()
 
         reordered_motion_df = motion_df[columns]
