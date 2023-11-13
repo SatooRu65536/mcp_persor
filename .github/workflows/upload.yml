@@ -23,7 +23,7 @@ jobs:
       - name: Install Dependencies
         run: |
             pip3 install wheel
-            pip3 install requirements.txt
+            pip3 install -r requirements.txt
       - name: Replace version
         run: |
           sed -i "s/__version__ = '1.0.0'/__VERSION__ = '${{ env.VERSION }}'/" mcp_persor/__init__.py
