@@ -19,7 +19,7 @@ class BVHparser:
         (frame_time, motion) = self.__get_motion(lines)
 
         self.frame_time = frame_time
-        self.default_motion_df = self.__get_default_motion_df(motion)
+        self.default_motion_df = self.__convert_default_motion_df(motion)
         self.motion_df = self.default_motion_df.copy()
 
     def __readfile(self, filename):
@@ -37,7 +37,7 @@ class BVHparser:
 
     def __try_to_float(self, s):
         '''
-            文字列をfloatに変換する
+            文字列をfloatに変換する. 変換できない場合はNoneを返す
 
             Parameters
             ----------
@@ -46,7 +46,7 @@ class BVHparser:
 
             Returns
             -------
-            float
+            float or None
                 変換後の値
         '''
 
@@ -155,6 +155,15 @@ class BVHparser:
         return (skeleton, root)
 
     def __get_channels(self):
+        '''
+            チャンネル名のリストを取得する
+
+            Returns
+            -------
+            list
+                チャンネル名のリスト
+        '''
+
         channels = []
         for j in self.skeleton.keys():
             channels += [f'{j}_{c}' for c in self.skeleton[j]['channels']]
@@ -163,7 +172,7 @@ class BVHparser:
 
     def __get_motion(self, lines):
         '''
-            トークン配列からモーションデータを取得する
+            行ごとの配列からモーションデータを取得する
 
             Parameters
             ----------
@@ -193,9 +202,9 @@ class BVHparser:
 
         return (frame_time, new_motion)
 
-    def __get_default_motion_df(self, motion):
+    def __convert_default_motion_df(self, motion):
         '''
-            BVHファイルからモーションデータを取得する
+            モーションの二次元配列からデータフレームに変換する
 
             Returns
             -------
@@ -228,12 +237,12 @@ class BVHparser:
 
     def __get_skeleton_str(self, joint):
         '''
-            BVHファイルからスケルトンオブジェクトを取得する
+            骨格オブジェクトを取得する
 
             Returns
             -------
             dict
-                スケルトンオブジェクト
+                骨格オブジェクト
         '''
 
         root_or_joint = 'ROOT' if joint == self.root else 'JOINT'
@@ -258,12 +267,12 @@ class BVHparser:
 
     def __get_columns(self, joint):
         '''
-            BVHファイルからカラム名を取得する
+            カラム名一覧を取得する
 
             Returns
             -------
             list
-                カラム名
+                カラム名一覧
         '''
 
         children = self.skeleton[joint]['children']
@@ -277,7 +286,7 @@ class BVHparser:
 
     def __get_relative_motion_df(self, joint):
         '''
-            BVHファイルから相対的な関節のモーションデータを取得する
+            相対的な関節のモーションデータを取得する
 
             Returns
             -------
@@ -296,7 +305,7 @@ class BVHparser:
 
     def __get_absolute_motion_df(self, joint):
         '''
-            BVHファイルから絶対的な関節のモーションデータを取得する
+            絶対的な関節のモーションデータを取得する
 
             Returns
             -------
@@ -382,7 +391,6 @@ class BVHparser:
 
         self.motion_df.update(diff_motion_df)
 
-
     def get_joint_offset(self, joint):
         '''
             指定したjointのoffsetを取得する
@@ -419,7 +427,7 @@ class BVHparser:
 
     def get_initial_position(self, channel_names=['Xposition', 'Yposition', 'Zposition']):
         '''
-            初期位置を設定する
+            初期位置を取得する
 
             Parameters
             ----------
@@ -470,7 +478,7 @@ class BVHparser:
 
     def get_motion_df(self):
         '''
-            BVHファイルからモーションデータを取得する
+            モーションのデータフレームを取得する
 
             Returns
             -------
@@ -482,7 +490,7 @@ class BVHparser:
 
     def set_motion_df(self, motion_df):
         '''
-            BVHファイルからモーションデータを取得する
+            モーションのデータフレームを設定する
 
             Parameters
             ----------
@@ -501,7 +509,7 @@ class BVHparser:
 
     def get_joint_motion_df(self, joint, mode='relative'):
         '''
-            BVHファイルから指定したjointのモーションデータを取得する
+            指定したjointのモーションデータを取得する
 
             Parameters
             ----------
@@ -527,7 +535,7 @@ class BVHparser:
 
     def set_joint_motion_df(self, joint, motion_df, mode='relative'):
         '''
-            BVHファイルから指定したjointのモーションデータを設定する
+            指定したjointのモーションデータを設定する
 
             Parameters
             ----------
@@ -600,6 +608,7 @@ class BVHparser:
 
         skelton_str = self.__get_skeleton_str(self.root)
         columns = self.__get_columns(self.root)
+        print(columns)
         motion_df = self.get_motion_df()
 
         reordered_motion_df = motion_df[columns]
