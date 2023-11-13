@@ -328,6 +328,61 @@ class BVHparser:
 
         return joint_motion_df
 
+    def __set_relative_joint_motion_df(self, joint, motion_df):
+        '''
+            jointの相対的なモーションデータを設定する
+
+            Parameters
+            ----------
+            motion_df : pandas.DataFrame
+                モーションデータ
+        '''
+
+        cpied_motion_df = motion_df.copy()
+        cpied_motion_df.columns = [
+            c if c == 'time' else f'{joint}_{c}'
+            for c in cpied_motion_df.columns
+        ]
+
+        original_columns = set(self.motion_df.columns)
+        columns = set(cpied_motion_df.columns)
+        missing_columns = columns - original_columns
+        if len(missing_columns) > 0:
+            raise ValueError(
+                f'columns {missing_columns} are missing in motion_df')
+        else:
+            self.motion_df.update(cpied_motion_df)
+
+    def __set_absolute_joint_motion_df(self, joint, motion_df):
+        '''
+            jointの絶対的なモーションデータを設定する
+
+            Parameters
+            ----------
+            motion_df : pandas.DataFrame
+                モーションデータ
+        '''
+
+        cpied_motion_df = motion_df.copy()
+        cpied_motion_df.columns = [
+            c if c == 'time' else f'{joint}_{c}'
+            for c in cpied_motion_df.columns
+        ]
+
+        original_columns = set(self.motion_df.columns)
+        columns = set(cpied_motion_df.columns)
+        missing_columns = columns - original_columns
+        if len(missing_columns) > 0:
+            raise ValueError(
+                f'columns {missing_columns} are missing in motion_df')
+
+        absolute_motion_df = self.__get_absolute_motion_df(joint)
+        diff_motion_df = cpied_motion_df - absolute_motion_df
+        diff_motion_df['time'] = cpied_motion_df['time']
+
+        self.motion_df.update(diff_motion_df)
+
+
     def get_joint_offset(self, joint):
         '''
             指定したjointのoffsetを取得する
@@ -472,29 +527,26 @@ class BVHparser:
 
     def set_joint_motion_df(self, joint, motion_df, mode='relative'):
         '''
-            BVHファイルからモーションデータを取得する
+            BVHファイルから指定したjointのモーションデータを設定する
 
             Parameters
             ----------
+            joint : str
+                モーションデータを設定するjoint
             motion_df : pandas.DataFrame
                 モーションデータ
+            mode : str
+                モーションデータの種類
+                relative: 相対的な関節のモーションデータ
+                absolute: 絶対的な関節のモーションデータ
         '''
 
-        cpied_motion_df = motion_df.copy()
-
-        cpied_motion_df.columns = [
-            c if c == 'time' else f'{joint}_{c}'
-            for c in cpied_motion_df.columns
-        ]
-
-        original_columns = set(self.motion_df.columns)
-        columns = set(cpied_motion_df.columns)
-        missing_columns = columns - original_columns
-        if len(missing_columns) > 0:
-            raise ValueError(
-                f'columns {missing_columns} are missing in motion_df')
+        if mode == 'relative':
+            self.__set_relative_joint_motion_df(joint, motion_df)
+        elif mode == 'absolute':
+            self.__set_absolute_joint_motion_df(joint, motion_df)
         else:
-            self.motion_df.update(cpied_motion_df)
+            raise ValueError(f'invalid mode: {mode}')
 
     def get_joints(self):
         '''
