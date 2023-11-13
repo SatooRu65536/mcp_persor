@@ -16,10 +16,9 @@ class BVHparser:
         self.root = root
         self.channels = self.__get_channels()
 
-        (frame_time, frames, motion) = self.__get_motion(lines)
+        (frame_time, motion) = self.__get_motion(lines)
 
         self.frame_time = frame_time
-        self.frames = frames
         self.default_motion_df = self.__get_default_motion_df(motion)
         self.motion_df = self.default_motion_df.copy()
 
@@ -178,13 +177,12 @@ class BVHparser:
         '''
 
         motion = []
-        frames = None
         frame_time = None
         for i in range(len(lines)):
             if 'MOTION' in lines[i]:
                 continue
             elif 'Frames:' in lines[i]:
-                frames = int(self.__try_to_float(lines[i].split()[1]))
+                continue
             elif 'Frame Time:' in lines[i]:
                 frame_time = self.__try_to_float(lines[i].split()[2])
             else:
@@ -193,7 +191,7 @@ class BVHparser:
         n = len(self.channels)
         new_motion = [motion[i:i+n] for i in range(0, len(motion), n)]
 
-        return (frame_time, frames, new_motion)
+        return (frame_time, new_motion)
 
     def __get_default_motion_df(self, motion):
         '''
@@ -249,7 +247,8 @@ class BVHparser:
                 [self.__get_skeleton_str(child) for child in children]
             )
         else:
-            end_offset = ' '.join(map(str, self.skeleton[f'_End_{joint}']['offset']))
+            end_offset = ' '.join(
+                map(str, self.skeleton[f'_End_{joint}']['offset']))
             children_str = f'End Site\n{{\nOFFSET {end_offset}\n}}'
 
         return f'{root_or_joint} {joint}\n{{\n' + \
@@ -275,6 +274,59 @@ class BVHparser:
             return channels + sum([self.__get_columns(child) for child in children], [])
         else:
             return channels
+
+    def __get_relative_motion_df(self, joint):
+        '''
+            BVHファイルから相対的な関節のモーションデータを取得する
+
+            Returns
+            -------
+            pandas.DataFrame
+                モーションデータ
+        '''
+
+        columns = self.__get_joint_columns(joint)
+        joint_motion_df = self.get_motion_df()[['time', *columns]]
+
+        # カラム名から {joint}_ を削除
+        columns = joint_motion_df.columns
+        joint_motion_df.columns = [c.replace(f'{joint}_', '') for c in columns]
+
+        return joint_motion_df
+
+    def __get_absolute_motiondf(self, joint):
+        '''
+            BVHファイルから絶対的な関節のモーションデータを取得する
+
+            Returns
+            -------
+            pandas.DataFrame
+                モーションデータ
+        '''
+
+        motion_df = self.get_motion_df()
+        path = self.get_skeleton_path2root(joint)
+
+        joint_columns = self.__get_joint_columns(joint)
+        joint_motion_df = motion_df[joint_columns]
+        joint_motion_df.columns = [
+            c.replace(f'{joint}_', '')
+            for c in joint_motion_df.columns
+        ]
+
+        for i in range(1, len(path)):
+            path_columns = self.__get_joint_columns(path[i])
+            path_motion_df = motion_df[path_columns]
+            path_motion_df.columns = [
+                c.replace(f'{path[i]}_', '')
+                for c in path_motion_df.columns
+            ]
+
+            joint_motion_df += path_motion_df
+
+        joint_motion_df.insert(0, 'time', motion_df['time'])
+
+        return joint_motion_df
 
     def get_joint_offset(self, joint):
         '''
@@ -373,9 +425,37 @@ class BVHparser:
 
         return self.motion_df.copy()
 
-    def get_relative_motion_df(self, joint):
+    def set_motion_df(self, motion_df):
         '''
-            BVHファイルから相対的な関節のモーションデータを取得する
+            BVHファイルからモーションデータを取得する
+
+            Parameters
+            ----------
+            motion_df : pandas.DataFrame
+                モーションデータ
+        '''
+
+        original_columns = set(self.motion_df.columns)
+        columns = set(motion_df.columns)
+        missing_columns = original_columns - columns
+        if len(missing_columns) > 0:
+            raise ValueError(
+                f'columns {missing_columns} are missing in motion_df')
+        else:
+            self.motion_df = motion_df.copy()
+
+    def get_joint_motion_df(self, joint, mode='relative'):
+        '''
+            BVHファイルから指定したjointのモーションデータを取得する
+
+            Parameters
+            ----------
+            joint : str
+                モーションデータを取得するjoint
+            mode : str
+                モーションデータの種類
+                relative: 相対的な関節のモーションデータ
+                absolute: 絶対的な関節のモーションデータ
 
             Returns
             -------
@@ -383,48 +463,38 @@ class BVHparser:
                 モーションデータ
         '''
 
-        columns = self.__get_joint_columns(joint)
-        joint_motion_df = self.get_motion_df()[['time', *columns]]
+        if mode == 'relative':
+            return self.__get_relative_motion_df(joint)
+        elif mode == 'absolute':
+            return self.__get_absolute_motiondf(joint)
+        else:
+            raise ValueError(f'invalid mode: {mode}')
 
-        # カラム名から {joint}_ を削除
-        columns = joint_motion_df.columns
-        joint_motion_df.columns = [c.replace(f'{joint}_', '') for c in columns]
-
-        return joint_motion_df
-
-    def get_absolute_motiondf(self, joint):
+    def set_joint_motion_df(self, joint, motion_df, mode='relative'):
         '''
-            BVHファイルから絶対的な関節のモーションデータを取得する
+            BVHファイルからモーションデータを取得する
 
-            Returns
-            -------
-            pandas.DataFrame
+            Parameters
+            ----------
+            motion_df : pandas.DataFrame
                 モーションデータ
         '''
 
-        motion_df = self.get_motion_df()
-        path = self.get_skeleton_path2root(joint)
+        cpied_motion_df = motion_df.copy()
 
-        joint_columns = self.__get_joint_columns(joint)
-        joint_motion_df = motion_df[joint_columns]
-        joint_motion_df.columns = [
-            c.replace(f'{joint}_', '')
-            for c in joint_motion_df.columns
+        cpied_motion_df.columns = [
+            c if c == 'time' else f'{joint}_{c}'
+            for c in cpied_motion_df.columns
         ]
 
-        for i in range(1, len(path)):
-            path_columns = self.__get_joint_columns(path[i])
-            path_motion_df = motion_df[path_columns]
-            path_motion_df.columns = [
-                c.replace(f'{path[i]}_', '')
-                for c in path_motion_df.columns
-            ]
-
-            joint_motion_df += path_motion_df
-
-        joint_motion_df.insert(0, 'time', motion_df['time'])
-
-        return joint_motion_df
+        original_columns = set(self.motion_df.columns)
+        columns = set(cpied_motion_df.columns)
+        missing_columns = columns - original_columns
+        if len(missing_columns) > 0:
+            raise ValueError(
+                f'columns {missing_columns} are missing in motion_df')
+        else:
+            self.motion_df.update(cpied_motion_df)
 
     def get_joints(self):
         '''
@@ -485,10 +555,12 @@ class BVHparser:
             index=False, header=False, sep=' '
         )
 
+        n = reordered_motion_df.shape[1]
+
         with open(filename, 'w') as f:
             f.write('HIERARCHY\n')
             f.write(f'{skelton_str}\n')
             f.write('MOTION\n')
-            f.write(f'Frames: {self.frames}\n')
+            f.write(f'Frames: {n}\n')
             f.write(f'Frame Time: {self.frame_time}\n')
             f.write(motion)
