@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import time
 import re
 
 
@@ -107,7 +108,6 @@ class BVHparser:
         root = None
         joint_list = []
 
-        reserved_words = ['OFFSET', 'CHANNELS', 'JOINT', '{', 'End']
         for i in range(len(tokens)):
             if tokens[i] == '{':
                 joint_list.append(joint_name)
@@ -119,13 +119,16 @@ class BVHparser:
                 joint_name = tokens[i+1]
                 skeleton[tokens[i+1]] = {
                     'joint': None,
+                    'children': [],
                     'offset': [],
                     'channels': [],
                 }
             elif tokens[i] == 'JOINT':
                 joint_name = tokens[i+1]
+                skeleton[joint_list[-1]]['children'].append(tokens[i+1])
                 skeleton[tokens[i+1]] = {
                     'joint': joint_list[-1],
+                    'children': [],
                     'offset': [],
                     'channels': [],
                 }
@@ -137,11 +140,18 @@ class BVHparser:
                     index += 1
                 i = index - 1
             elif tokens[i] == 'CHANNELS':
-                index = i + 2
-                while tokens[index] not in reserved_words:
+                channels_num = int(tokens[i + 1])
+                for index in range(i + 2, i + 2 + channels_num):
                     skeleton[joint_name]['channels'].append(tokens[index])
-                    index += 1
-                i = index - 1
+                i += channels_num + 1
+            elif tokens[i] == 'End':
+                joint_name = f'_End_{joint_name}'
+                skeleton[joint_name] = {
+                    'joint': joint_name,
+                    'children': [],
+                    'offset': [],
+                    'channels': [],
+                }
 
         return (skeleton, root)
 
@@ -174,7 +184,7 @@ class BVHparser:
             if 'MOTION' in lines[i]:
                 continue
             elif 'Frames:' in lines[i]:
-                frames = self.__try_to_float(lines[i].split()[1])
+                frames = int(self.__try_to_float(lines[i].split()[1]))
             elif 'Frame Time:' in lines[i]:
                 frame_time = self.__try_to_float(lines[i].split()[2])
             else:
@@ -217,6 +227,54 @@ class BVHparser:
 
         columns = self.motion_df.filter(like=joint).columns
         return columns
+
+    def __get_skeleton_str(self, joint):
+        '''
+            BVHファイルからスケルトンオブジェクトを取得する
+
+            Returns
+            -------
+            dict
+                スケルトンオブジェクト
+        '''
+
+        root_or_joint = 'ROOT' if joint == self.root else 'JOINT'
+        offset = self.skeleton[joint]['offset']
+        channels = self.skeleton[joint]['channels']
+        children = self.skeleton[joint]['children']
+
+        children_str = ''
+        if len(children) > 0:
+            children_str = '\n'.join(
+                [self.__get_skeleton_str(child) for child in children]
+            )
+        else:
+            end_offset = ' '.join(map(str, self.skeleton[f'_End_{joint}']['offset']))
+            children_str = f'End Site\n{{\nOFFSET {end_offset}\n}}'
+
+        return f'{root_or_joint} {joint}\n{{\n' + \
+            f'OFFSET {" ".join(map(str, offset))}\n' + \
+            f'CHANNELS {len(channels)} {" ".join(map(str, channels))}\n' + \
+            f'{children_str}\n}}'
+
+    def __get_columns(self, joint):
+        '''
+            BVHファイルからカラム名を取得する
+
+            Returns
+            -------
+            list
+                カラム名
+        '''
+
+        children = self.skeleton[joint]['children']
+        channels = self.skeleton[joint]['channels']
+        channels = [f'{joint}_{c}' for c in channels]
+
+        if len(children) > 0:
+            return channels + sum([self.__get_columns(child) for child in children], [])
+        else:
+            return channels
 
     def get_joint_offset(self, joint):
         '''
@@ -391,3 +449,46 @@ class BVHparser:
         '''
 
         return self.channels
+
+    def to_csv(self, filename):
+        '''
+            モーションデータをCSVに出力する
+
+            Parameters
+            ----------
+            filename : str
+                出力するCSVファイル名
+        '''
+
+        self.motion_df.to_csv(filename)
+
+    def to_bvh(self, filename=None):
+        '''
+            BVHファイルに出力する
+
+            Parameters
+            ----------
+            filename : str
+                出力するBVHファイル名
+        '''
+
+        if filename == None:
+            now = time.localtime()
+            filename = f'MCPM_{time.strftime("%Y%m%d_%H%M%S", now)}.BVH'
+
+        skelton_str = self.__get_skeleton_str(self.root)
+        columns = self.__get_columns(self.root)
+        motion_df = self.get_motion_df()
+
+        reordered_motion_df = motion_df[columns]
+        motion = reordered_motion_df.to_csv(
+            index=False, header=False, sep=' '
+        )
+
+        with open(filename, 'w') as f:
+            f.write('HIERARCHY\n')
+            f.write(f'{skelton_str}\n')
+            f.write('MOTION\n')
+            f.write(f'Frames: {self.frames}\n')
+            f.write(f'Frame Time: {self.frame_time}\n')
+            f.write(motion)
