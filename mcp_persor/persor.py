@@ -644,7 +644,7 @@ class BVHparser:
             index=False, header=False, sep=' '
         )
 
-        n = reordered_motion_df.shape[1]
+        n = reordered_motion_df.shape[0]
 
         with open(filename, 'w') as f:
             f.write('HIERARCHY\n')
