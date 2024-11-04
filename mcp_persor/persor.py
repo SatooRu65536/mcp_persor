@@ -130,7 +130,7 @@ class BVHparser:
 
             elif tokens[i] == "JOINT":
                 joint_name = tokens[i + 1]
-                assert type(skeleton[joint_list[-1]]["children"]) is list[str]
+                assert type(skeleton[joint_list[-1]]["children"]) is list
 
                 skeleton[joint_list[-1]]["children"].append(tokens[i + 1])
                 skeleton[tokens[i + 1]] = {
