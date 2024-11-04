@@ -609,7 +609,7 @@ class BVHparser:
 
         return self.channels
 
-    def to_csv(self, filename):
+    def to_csv(self, filename, index=False):
         '''
             モーションデータをCSVに出力する
 
@@ -619,7 +619,7 @@ class BVHparser:
                 出力するCSVファイル名
         '''
 
-        self.motion_df.to_csv(filename)
+        self.motion_df.to_csv(filename, index=index)
 
     def to_bvh(self, filename=None):
         '''
