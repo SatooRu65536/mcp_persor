@@ -21,4 +21,5 @@ setup(
     license="MIT",
     python_requires=">=3.7",
     install_requires=INSTALL_REQUIRES,
+    include_package_data=True,
 )
