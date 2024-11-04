@@ -483,6 +483,18 @@ class BVHparser:
         for i, channel_name in enumerate(channel_names):
             self.motion_df[f'{self.root}_{channel_name}'] += diff_rot[i]
 
+    def get_skeleton(self):
+        '''
+            骨格データを取得する
+
+            Returns
+            -------
+            dict
+                骨格データ
+        '''
+
+        return self.skeleton.copy()
+
     def get_skeleton_path2root(self, joint):
         '''
             指定したjointからrootまでのパスを取得する
